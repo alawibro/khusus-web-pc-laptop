@@ -1,11 +1,9 @@
 /* =====================================================================
-   MODEL — the data and state of the app. Never touches the DOM.
-   Edit your content here: featured projects, skills, image overrides.
+   MODEL — data and state. Never touches the DOM.
+   Daftar proyek ada di `projects`. Tambah / ubah objek di sana saja.
    ===================================================================== */
 
 const Model = {
-
-  githubUser: "alawibro",
 
   // Where the contact form delivers (via formsubmit.co relay)
   contactEmail: "em.be.alawi@gmail.com",
@@ -14,31 +12,59 @@ const Model = {
   state: {
     screen: "home",        // which screen is showing
     menuIndex: 0,          // selected item on the home menu
-    reposLoaded: false,
+    projectsRendered: false,
     skillsBuilt: false,
   },
 
-  // ---- Featured projects (hand-written, shown above the GitHub feed) ----
-  // Isi dengan proyek Anda sendiri. Kosong = tidak ada kartu.
-  featured: [],
-
-  // Repo yang ada di "featured" disembunyikan dari daftar GitHub
-  featuredRepoNames: [],
-
-  // Ditampilkan kalau API GitHub tidak bisa diakses
-  fallbackRepos: [],
-
-  // Optional thumbnail overrides: repo name → image path.
-  // Anything not listed is looked up at assets/projects/<RepoName>.png
-  projectImages: {
-    // "DownloadGuard": "assets/projects/downloadguard.png",
+  // ---- Kategori proyek: label dan tata letak kartu ----
+  // key   : harus sama dengan nilai `category` pada proyek
+  // label : judul grup
+  // note  : keterangan singkat di samping judul grup
+  // badge : label kecil di pojok kartu
+  categories: {
+    mobile: { key: "mobile", label: "Mobile View", note: "Responsive · layar HP", badge: "Mobile" },
+    pc:     { key: "pc",     label: "Khusus PC",   note: "Desktop · layar laptop / PC", badge: "PC" },
   },
 
-  langColors: {
-    JavaScript: "#f1e05a", TypeScript: "#3178c6", Python: "#3572A5",
-    PHP: "#4F5D95", CSS: "#663399", HTML: "#e34c26",
-    "Jupyter Notebook": "#DA5B0B", MATLAB: "#e16737", Java: "#b07219", C: "#555", "C++": "#f34b7d",
-  },
+  // ---- Proyek (menu PROJECTS) ----
+  // id          : unik, dipakai sebagai data-id di DOM
+  // category    : "mobile" | "pc"
+  // tags        : tech stack, ditampilkan sebagai chip
+  // url         : tautan demo (wajib https, lihat isSafeUrl)
+  projects: [
+    {
+      id: "hp-web-coba",
+      title: "Persona 3 Reload Pause Menu",
+      category: "mobile",
+      description: "Portfolio yang meniru menu pause Persona 3 Reload dengan detail mirip aslinya, lengkap dengan layar loading dan kontrol bergaya keyboard.",
+      tags: ["HTML", "CSS", "JavaScript"],
+      url: "https://alawibro.github.io/hp-web-coba/",
+    },
+    {
+      id: "coba-hp-web",
+      title: "Biodata Pribadi",
+      category: "mobile",
+      description: "Halaman biodata dengan gaya santai: hobi, keluarga, dan fakta-fakta unik, dilengkapi beberapa easter egg tersembunyi.",
+      tags: ["HTML", "CSS", "JavaScript"],
+      url: "https://alawibro.github.io/coba-hp-web/",
+    },
+    {
+      id: "hp-mykisah-wkwkwk",
+      title: "My Kisah · Mahiru Shiina",
+      category: "mobile",
+      description: "Hub personal yang dibuka lewat gerbang \"Masuki kuil\", dengan suara dan video yang aktif setelah pengunjung masuk.",
+      tags: ["HTML", "CSS", "JavaScript", "Audio & Video"],
+      url: "https://alawibro.github.io/hp-mykisah-wkwkwk/",
+    },
+    {
+      id: "khusus-pc-web",
+      title: "Portfolio Desktop Edition",
+      category: "pc",
+      description: "Versi portfolio bergaya menu Persona yang dirancang khusus untuk layar PC dan laptop, dengan menu Projects, Skills, About, dan Contact.",
+      tags: ["HTML", "CSS", "JavaScript"],
+      url: "https://alawibro.github.io/khusus-pc-web/index.html",
+    },
+  ],
 
   // ---- Skills screen ----
   skills: [
@@ -62,18 +88,31 @@ const Model = {
     ]},
   ],
 
-  // ---- Data fetching ----
-  async fetchRepos() {
-    const skip = new Set(this.featuredRepoNames);
+  /* ---------- Queries (pure functions over the data above) ---------- */
+
+  // Hanya https yang boleh dibuka, supaya tidak ada javascript: atau data: URL yang lolos
+  isSafeUrl(url) {
     try {
-      const res = await fetch(
-        `https://api.github.com/users/${this.githubUser}/repos?per_page=100&sort=updated`
-      );
-      if (!res.ok) throw new Error(res.status);
-      const repos = (await res.json()).filter(r => !r.fork && !skip.has(r.name));
-      return { repos, live: true };
+      return new URL(url).protocol === "https:";
     } catch {
-      return { repos: this.fallbackRepos.filter(r => !skip.has(r.name)), live: false };
+      return false;
     }
+  },
+
+  // Proyek dikelompokkan per kategori, urutan kategori mengikuti `categories`.
+  // Proyek dengan URL tidak valid dibuang di sini, sebelum sampai ke View.
+  getProjectsByCategory() {
+    return Object.values(this.categories)
+      .map(category => ({
+        category,
+        items: this.projects.filter(
+          p => p.category === category.key && this.isSafeUrl(p.url)
+        ),
+      }))
+      .filter(group => group.items.length > 0);
+  },
+
+  findProject(id) {
+    return this.projects.find(p => p.id === id) ?? null;
   },
 };

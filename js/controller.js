@@ -13,6 +13,39 @@ const Controller = {
     this.bindKeyboard();
     this.bindAudioUnlock();
     this.bindContactForm();
+    this.bindProjectGrid();
+  },
+
+  /* ---------- Project cards (event delegation) ----------
+     Satu listener dipasang sekali di container yang tetap ada di DOM.
+     Kartu boleh digambar ulang tanpa meninggalkan listener yatim di memori. */
+  bindProjectGrid() {
+    View.els.projectGrid.addEventListener("click", e => this.onProjectClick(e));
+  },
+
+  onProjectClick(event) {
+    const card = event.target.closest(".project-card");
+    if (!card) return;
+
+    // Klik tengah, Ctrl, Cmd, Shift: biarkan browser membuka tab sendiri
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return;
+
+    event.preventDefault();
+    this.play();
+
+    const project = Model.findProject(card.dataset.id);
+    if (!project || !Model.isSafeUrl(project.url)) return;
+    this.openProject(project);
+  },
+
+  openProject(project) {
+    const win = window.open(project.url, "_blank");
+    if (win) {
+      // Demo tidak boleh mengendalikan halaman portfolio ini
+      win.opener = null;
+      return;
+    }
+    View.setStatus("Popup diblokir browser · klik kanan kartu lalu pilih Open in new tab");
   },
 
   /* ---------- Contact form (relayed via formsubmit.co, mailto fallback) ---------- */
@@ -85,14 +118,13 @@ const Controller = {
   },
 
   /* ---------- Screen data loading ---------- */
-  async loadProjects() {
-    if (Model.state.reposLoaded) return;
-    const { repos, live } = await Model.fetchRepos();
-    const status = live
-      ? `${repos.length} repositories · live from GitHub`
-      : "GitHub API unavailable right now";
-    View.renderRepos(repos, status, Model);
-    Model.state.reposLoaded = true;
+  loadProjects() {
+    if (Model.state.projectsRendered) return;
+    const groups = Model.getProjectsByCategory();
+    const total = groups.reduce((sum, g) => sum + g.items.length, 0);
+    const parts = groups.map(g => `${g.items.length} ${g.category.label}`).join(" · ");
+    View.renderProjects(groups, total ? `${total} proyek — ${parts}` : "Belum ada proyek");
+    Model.state.projectsRendered = true;
   },
 
   loadSkills() {

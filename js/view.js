@@ -8,15 +8,15 @@ const View = {
   reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
 
   els: {
-    screens:    {},   // filled in init()
-    menuItems:  [],
-    wipe:       document.getElementById("wipe"),
-    repoGrid:   document.getElementById("repo-grid"),
-    repoStatus: document.getElementById("repo-status"),
-    skillsBody: document.getElementById("skills-body"),
-    sfx:        document.getElementById("sfx-select"),
-    cursor:     document.getElementById("cursor"),
-    clock:      document.getElementById("clock"),
+    screens:       {},   // filled in init()
+    menuItems:     [],
+    wipe:          document.getElementById("wipe"),
+    projectGrid:   document.getElementById("project-grid"),
+    projectStatus: document.getElementById("project-status"),
+    skillsBody:    document.getElementById("skills-body"),
+    sfx:           document.getElementById("sfx-select"),
+    cursor:        document.getElementById("cursor"),
+    clock:         document.getElementById("clock"),
   },
 
   init() {
@@ -32,11 +32,22 @@ const View = {
     document.body.classList.add("loaded");
   },
 
+  /* ---------- Helpers ---------- */
+
   // Deterministic pseudo-random hash (so letters look the same every visit)
   hash(str) {
     let h = 9;
     for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 387420489);
     return (h ^ h >>> 9) >>> 0;
+  },
+
+  // Membangun elemen lewat textContent, bukan innerHTML,
+  // supaya teks dari data selalu diperlakukan sebagai teks biasa.
+  el(tag, className = "", text = "") {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text) node.textContent = text;
+    return node;
   },
 
   /* ---------- Ransom-note lettering ---------- */
@@ -94,41 +105,108 @@ const View = {
     } catch {}
   },
 
-  /* ---------- Project cards ---------- */
-  cardThumb(src) {
-    return `<div class="thumb"><img src="${src}" alt="" loading="lazy"
-      onerror="this.closest('.thumb').remove()"></div>`;
+  setStatus(text) {
+    this.els.projectStatus.textContent = text;
   },
 
-  // Split "Medical Image…" so the first word renders red
-  splitTitle(title) {
-    const first = title.split(" ")[0];
-    return `<em>${first}</em>${title.slice(first.length)}`;
-  },
+  /* ---------- Projects ---------- */
 
-  renderRepos(repos, statusText, model) {
-    this.els.repoStatus.textContent = statusText;
-    this.els.repoGrid.innerHTML = "";
-    repos.forEach((r, i) => {
-      const a = document.createElement("a");
-      a.className = "card";
-      a.href = r.html_url; a.target = "_blank"; a.rel = "noopener";
-      a.style.setProperty("--tilt", ((this.hash(r.name) % 5) - 2) * 0.8 + "deg");
-      a.style.setProperty("--d", i * 70 + "ms");
-      a.style.setProperty("--lc", model.langColors[r.language] || "#e60012");
-      const pretty = r.name.replace(/[-_]/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-      const img = model.projectImages[r.name] || `assets/projects/${r.name}.png`;
-      a.innerHTML = `
-        ${this.cardThumb(img)}
-        <span class="lang">${r.language || "Repo"}</span>
-        <h3>${this.splitTitle(pretty)}</h3>
-        <p>${r.description || "No description yet, but the code speaks for itself."}</p>
-        <div class="meta">
-          <span>★ ${r.stargazers_count || 0}</span>
-          <span class="go">View on GitHub →</span>
-        </div>`;
-      this.els.repoGrid.appendChild(a);
+  // groups: [{ category: { key, label, note }, items: [project, ...] }, ...]
+  renderProjects(groups, status) {
+    const { projectGrid } = this.els;
+    projectGrid.replaceChildren();
+    this.setStatus(status);
+
+    let number = 0;
+    groups.forEach(({ category, items }) => {
+      const section = this.el("section", `project-group project-group--${category.key}`);
+      section.appendChild(this.buildGroupHead(category));
+
+      const row = this.el("div", `project-row project-row--${category.key}`);
+      items.forEach(project => {
+        number += 1;
+        row.appendChild(this.buildProjectCard(project, category, number));
+      });
+
+      section.appendChild(row);
+      projectGrid.appendChild(section);
     });
+  },
+
+  buildGroupHead(category) {
+    const head = this.el("header", "project-group-head");
+    head.append(
+      this.el("span", "bar"),
+      this.el("h2", "", category.label),
+      this.el("span", "project-group-note", category.note),
+    );
+    return head;
+  },
+
+  // Satu kartu = satu tautan <a>. Klik ditangani Controller (event delegation).
+  buildProjectCard(project, category, number) {
+    const isPc = category.key === "pc";
+    const card = this.el("a", `project-card project-card--${category.key}`);
+    card.href = project.url;
+    card.target = "_blank";
+    card.rel = "noopener noreferrer";
+    card.dataset.id = project.id;
+
+    // Kartu HP sedikit miring seperti stiker; kartu PC lurus seperti layar
+    const tilt = isPc ? 0 : ((this.hash(project.id) % 5) - 2) * 0.8;
+    card.style.setProperty("--tilt", `${tilt}deg`);
+    card.style.setProperty("--d", `${(number - 1) * 90}ms`);
+
+    const body = this.el("div", "project-body");
+    body.append(
+      this.buildTitle(project.title),
+      this.el("p", "project-desc", project.description),
+      this.buildTags(project.tags),
+      this.buildMeta(project),
+    );
+
+    card.append(
+      this.buildThumb(category, number),
+      this.el("span", "project-badge", category.badge),
+      body,
+    );
+    return card;
+  },
+
+  // Ilustrasi bingkai perangkat dari CSS murni (tanpa file gambar, jadi tidak ada 404)
+  buildThumb(category, number) {
+    const thumb = this.el("div", `project-thumb project-thumb--${category.key}`);
+    thumb.setAttribute("aria-hidden", "true");
+    thumb.append(
+      this.el("span", "device"),
+      this.el("span", "thumb-num", String(number).padStart(2, "0")),
+    );
+    return thumb;
+  },
+
+  // Kata pertama judul tampil merah, gaya judul Persona
+  buildTitle(title) {
+    const h3 = this.el("h3");
+    const [first, ...rest] = title.split(" ");
+    h3.appendChild(this.el("em", "", first));
+    if (rest.length) h3.append(` ${rest.join(" ")}`);
+    return h3;
+  },
+
+  buildTags(tags) {
+    const list = this.el("ul", "project-tags");
+    tags.forEach(tag => list.appendChild(this.el("li", "", tag)));
+    return list;
+  },
+
+  // Kiri: domain demo (sudah tervalidasi https oleh Model). Kanan: ajakan klik.
+  buildMeta(project) {
+    const meta = this.el("div", "project-meta");
+    meta.append(
+      this.el("span", "", new URL(project.url).hostname),
+      this.el("span", "go", "Buka demo →"),
+    );
+    return meta;
   },
 
   /* ---------- Skills ---------- */
@@ -201,7 +279,7 @@ const View = {
       if (!visible) { cur.style.display = "block"; visible = true; }
       const t = e.target;
       const overLink = t.closest &&
-        t.closest("a,button,.card,.menu-item,.back-hint,.contact-chip,#big-name");
+        t.closest("a,button,.menu-item,.back-hint,.contact-chip,#big-name");
       cur.classList.toggle("link", !!overLink);
     }, { passive: true });
 
