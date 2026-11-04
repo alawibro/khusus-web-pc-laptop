@@ -70,7 +70,7 @@ const Model = {
       category: "pc",
       description: "Pemilih persona retrowave dengan lima karakter 3D dan transisi spin-swap di atas panggung synthwave.",
       tags: ["HTML", "CSS", "JavaScript", "GSAP", "model-viewer"],
-      url: "https://github.com/alawibro/3d-web-hero-pc",
+     url: "https://alawibro.github.io/3d-WEB-Hero-pc/",
     },
      ],
 
