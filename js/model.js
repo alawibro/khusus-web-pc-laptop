@@ -72,6 +72,14 @@ const Model = {
       tags: ["HTML", "CSS", "JavaScript", "GSAP", "model-viewer"],
      url: "https://alawibro.github.io/3d-WEB-Hero-pc/",
     },
+     {
+      id: "ironman-versi-pc",
+      title: "Ironman Versi PC",
+      category: "pc",
+      description: "Halaman pengenalan Ironman versi PC dengan video pembuka, bagian fitur, dan FAQ.",
+      tags: [],
+      url: "https://alawibro.github.io/Ironman-versi-pc/",
+    },
      ],
 
   // ---- Skills screen ----
