@@ -64,7 +64,15 @@ const Model = {
       tags: ["HTML", "CSS", "JavaScript"],
       url: "https://alawibro.github.io/khusus-pc-web/index.html",
     },
-  ],
+   {
+      id: "3d-web-hero-pc",
+      title: "3D Web Hero PC",
+      category: "pc",
+      description: "Pemilih persona retrowave dengan lima karakter 3D dan transisi spin-swap di atas panggung synthwave.",
+      tags: ["HTML", "CSS", "JavaScript", "GSAP", "model-viewer"],
+      url: "https://github.com/alawibro/3d-web-hero-pc",
+    },
+     ],
 
   // ---- Skills screen ----
   skills: [
