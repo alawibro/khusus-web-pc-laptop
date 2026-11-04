@@ -80,6 +80,14 @@ const Model = {
       tags: [],
       url: "https://alawibro.github.io/Ironman-versi-pc/",
     },
+     {
+      id: "dukun-khusus-pc",
+      title: "Dukun Khusus PC",
+      category: "pc",
+      description: "Halaman Dukun, studio ritual daring fiktif dengan nuansa spiritual tradisional yang dikemas gaya modern.",
+      tags: [],
+      url: "https://alawibro.github.io/Dukun-Khusus-PC/",
+    },
      ],
 
   // ---- Skills screen ----
