@@ -88,6 +88,14 @@ const Model = {
       tags: [],
       url: "https://alawibro.github.io/Dukun-Khusus-PC/",
     },
+     {
+      id: "pc-gabut",
+      title: "PC Gabut",
+      category: "pc",
+      description: "Halaman sketchbook M. Baihaqi Alawi.",
+      tags: [],
+      url: "https://alawibro.github.io/pc-gabut/",
+    },
      ],
 
   // ---- Skills screen ----
